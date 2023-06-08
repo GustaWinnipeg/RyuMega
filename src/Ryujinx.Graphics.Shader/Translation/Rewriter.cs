@@ -288,8 +288,8 @@ namespace Ryujinx.Graphics.Shader.Translation
             {
                 int functionId = hfm.GetOrCreateFunctionId(HelperFunctionName.TexelFetchScale);
                 int samplerIndex = isImage
-                    ? config.ResourceManager.GetTextureDescriptors().Length + config.ResourceManager.FindImageDescriptorIndex(texOp.Handle)
-                    : config.ResourceManager.FindTextureDescriptorIndex(texOp.Handle);
+                    ? config.ResourceManager.GetTextureDescriptors().Length + config.ResourceManager.FindImageDescriptorIndex(texOp.Binding)
+                    : config.ResourceManager.FindTextureDescriptorIndex(texOp.Binding);
 
                 for (int index = 0; index < coordsCount; index++)
                 {
@@ -332,7 +332,7 @@ namespace Ryujinx.Graphics.Shader.Translation
                 TypeSupportsScale(texOp.Type))
             {
                 int functionId = hfm.GetOrCreateFunctionId(HelperFunctionName.TextureSizeUnscale);
-                int samplerIndex = config.ResourceManager.FindTextureDescriptorIndex(texOp.Handle);
+                int samplerIndex = config.ResourceManager.FindTextureDescriptorIndex(texOp.Binding);
 
                 for (int index = texOp.DestsCount - 1; index >= 0; index--)
                 {
@@ -392,7 +392,7 @@ namespace Ryujinx.Graphics.Shader.Translation
 
             bool intCoords = (texOp.Flags & TextureFlags.IntCoords) != 0;
 
-            TextureDefinition definition = config.Properties.Textures[texOp.Handle];
+            TextureDefinition definition = config.Properties.Textures[texOp.Binding];
 
             bool isCoordNormalized = config.GpuAccessor.QueryTextureCoordNormalized(definition.HandleIndex, definition.CbufSlot);
 
@@ -431,13 +431,12 @@ namespace Ryujinx.Graphics.Shader.Translation
                     texOp.Type,
                     texOp.Format,
                     texOp.Flags,
-                    texOp.CbufSlot,
-                    texOp.Handle,
+                    texOp.Binding,
                     index,
                     new[] { coordSize },
                     texSizeSources));
 
-                config.ResourceManager.SetUsageFlagsForTextureQuery(texOp.Handle, texOp.Type);
+                config.ResourceManager.SetUsageFlagsForTextureQuery(texOp.Binding, texOp.Type);
 
                 Operand source = texOp.GetSource(coordsIndex + index);
 
@@ -504,13 +503,12 @@ namespace Ryujinx.Graphics.Shader.Translation
                     texOp.Type,
                     texOp.Format,
                     texOp.Flags,
-                    texOp.CbufSlot,
-                    texOp.Handle,
+                    texOp.Binding,
                     index,
                     new[] { coordSize },
                     texSizeSources));
 
-                config.ResourceManager.SetUsageFlagsForTextureQuery(texOp.Handle, texOp.Type);
+                config.ResourceManager.SetUsageFlagsForTextureQuery(texOp.Binding, texOp.Type);
 
                 node.List.AddBefore(node, new Operation(
                     Instruction.FP32 | Instruction.Multiply,
@@ -688,7 +686,7 @@ namespace Ryujinx.Graphics.Shader.Translation
 
                 Operand[] texSizes = InsertTextureLod(node, texOp, lodSources, bindlessHandle, coordsCount);
 
-                config.ResourceManager.SetUsageFlagsForTextureQuery(texOp.Handle, texOp.Type);
+                config.ResourceManager.SetUsageFlagsForTextureQuery(texOp.Binding, texOp.Type);
 
                 int destIndex = 0;
 
@@ -725,8 +723,7 @@ namespace Ryujinx.Graphics.Shader.Translation
                         texOp.Type,
                         texOp.Format,
                         texOp.Flags & ~(TextureFlags.Offset | TextureFlags.Offsets),
-                        texOp.CbufSlot,
-                        texOp.Handle,
+                        texOp.Binding,
                         1,
                         new[] { dests[destIndex++] },
                         newSources);
@@ -755,7 +752,7 @@ namespace Ryujinx.Graphics.Shader.Translation
 
                     Operand[] texSizes = InsertTextureLod(node, texOp, lodSources, bindlessHandle, coordsCount);
 
-                    config.ResourceManager.SetUsageFlagsForTextureQuery(texOp.Handle, texOp.Type);
+                    config.ResourceManager.SetUsageFlagsForTextureQuery(texOp.Binding, texOp.Type);
 
                     for (int index = 0; index < coordsCount; index++)
                     {
@@ -784,8 +781,7 @@ namespace Ryujinx.Graphics.Shader.Translation
                     texOp.Type,
                     texOp.Format,
                     texOp.Flags & ~(TextureFlags.Offset | TextureFlags.Offsets),
-                    texOp.CbufSlot,
-                    texOp.Handle,
+                    texOp.Binding,
                     componentIndex,
                     dests,
                     sources);
@@ -819,8 +815,7 @@ namespace Ryujinx.Graphics.Shader.Translation
                 texOp.Type,
                 texOp.Format,
                 texOp.Flags,
-                texOp.CbufSlot,
-                texOp.Handle,
+                texOp.Binding,
                 0,
                 new[] { lod },
                 lodSources));
@@ -845,8 +840,7 @@ namespace Ryujinx.Graphics.Shader.Translation
                     texOp.Type,
                     texOp.Format,
                     texOp.Flags,
-                    texOp.CbufSlot,
-                    texOp.Handle,
+                    texOp.Binding,
                     index,
                     new[] { texSizes[index] },
                     texSizeSources));
@@ -866,7 +860,7 @@ namespace Ryujinx.Graphics.Shader.Translation
                 return node;
             }
 
-            TextureDefinition definition = config.Properties.Textures[texOp.Handle];
+            TextureDefinition definition = config.Properties.Textures[texOp.Binding];
 
             TextureFormat format = config.GpuAccessor.QueryTextureFormat(definition.HandleIndex, definition.CbufSlot);
 

@@ -377,7 +377,7 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Glsl
                 {
                     if (arraySize == 0)
                     {
-                        arraySize = ShaderConfig.SamplerArraySize;
+                        arraySize = ResourceManager.SamplerArraySize;
                     }
                     else if (--arraySize != 0)
                     {
@@ -412,7 +412,7 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Glsl
                 {
                     if (arraySize == 0)
                     {
-                        arraySize = ShaderConfig.SamplerArraySize;
+                        arraySize = ResourceManager.SamplerArraySize;
                     }
                     else if (--arraySize != 0)
                     {

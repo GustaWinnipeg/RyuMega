@@ -121,8 +121,6 @@ namespace Ryujinx.Graphics.Shader.Translation
 
         private readonly Dictionary<TextureInfo, TextureMeta> _usedTextures;
         private readonly Dictionary<TextureInfo, TextureMeta> _usedImages;
-        private TextureDescriptor[] _cachedTextureDescriptors;
-        private TextureDescriptor[] _cachedImageDescriptors;
 
         public ShaderConfig(ShaderStage stage, IGpuAccessor gpuAccessor, TranslationOptions options, int localMemorySize)
         {
@@ -719,109 +717,13 @@ namespace Ryujinx.Graphics.Shader.Translation
             return meta;
         }
 
-        public TextureDescriptor[] GetTextureDescriptors()
-        {
-            return _cachedTextureDescriptors ??= GetTextureOrImageDescriptors(_usedTextures, GpuAccessor.QueryBindingTexture);
-        }
-
-        public TextureDescriptor[] GetImageDescriptors()
-        {
-            return _cachedImageDescriptors ??= GetTextureOrImageDescriptors(_usedImages, GpuAccessor.QueryBindingImage);
-        }
-
-        private static TextureDescriptor[] GetTextureOrImageDescriptors(Dictionary<TextureInfo, TextureMeta> dict, Func<int, bool, int> getBindingCallback)
-        {
-            var descriptors = new TextureDescriptor[dict.Count];
-
-            int i = 0;
-            foreach (var kv in dict.OrderBy(x => x.Key.Indexed).OrderBy(x => x.Key.Handle))
-            {
-                var info = kv.Key;
-                var meta = kv.Value;
-
-                bool isBuffer = (meta.Type & SamplerType.Mask) == SamplerType.TextureBuffer;
-                int binding = getBindingCallback(i, isBuffer);
-
-                descriptors[i] = new TextureDescriptor(binding, meta.Type, info.Format, info.CbufSlot, info.Handle);
-                descriptors[i].SetFlag(meta.UsageFlags);
-                i++;
-            }
-
-            return descriptors;
-        }
-
-        public TextureDescriptor FindTextureDescriptor(AstTextureOperation texOp)
-        {
-            TextureDescriptor[] descriptors = GetTextureDescriptors();
-
-            for (int i = 0; i < descriptors.Length; i++)
-            {
-                var descriptor = descriptors[i];
-
-                if (descriptor.CbufSlot == texOp.CbufSlot &&
-                    descriptor.HandleIndex == texOp.Handle &&
-                    descriptor.Format == texOp.Format)
-                {
-                    return descriptor;
-                }
-            }
-
-            return default;
-        }
-
-        private static int FindDescriptorIndex(TextureDescriptor[] array, AstTextureOperation texOp)
-        {
-            for (int i = 0; i < array.Length; i++)
-            {
-                var descriptor = array[i];
-
-                if (descriptor.Type == texOp.Type &&
-                    descriptor.CbufSlot == texOp.CbufSlot &&
-                    descriptor.HandleIndex == texOp.Handle &&
-                    descriptor.Format == texOp.Format)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        private static int FindDescriptorIndex(TextureDescriptor[] array, TextureOperation texOp, bool ignoreType = false)
-        {
-            for (int i = 0; i < array.Length; i++)
-            {
-                var descriptor = array[i];
-
-                if ((descriptor.Type == texOp.Type || ignoreType) &&
-                    descriptor.CbufSlot == texOp.CbufSlot &&
-                    descriptor.HandleIndex == texOp.Handle &&
-                    descriptor.Format == texOp.Format)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        public int FindTextureDescriptorIndex(TextureOperation texOp, bool ignoreType = false)
-        {
-            return FindDescriptorIndex(GetTextureDescriptors(), texOp, ignoreType);
-        }
-
-        public int FindImageDescriptorIndex(TextureOperation texOp)
-        {
-            return FindDescriptorIndex(GetImageDescriptors(), texOp);
-        }
-
         public ShaderProgramInfo CreateProgramInfo(ShaderIdentification identification = ShaderIdentification.None)
         {
             return new ShaderProgramInfo(
                 ResourceManager.GetConstantBufferDescriptors(),
                 ResourceManager.GetStorageBufferDescriptors(),
-                GetTextureDescriptors(),
-                GetImageDescriptors(),
+                ResourceManager.GetTextureDescriptors(),
+                ResourceManager.GetImageDescriptors(),
                 identification,
                 GpLayerInputAttribute,
                 Stage,

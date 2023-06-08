@@ -219,7 +219,7 @@ namespace Ryujinx.Graphics.Shader.Instructions
                 return context.Copy(Register(srcB++, RegisterType.Gpr));
             }
 
-            Operand destOperand = dest != RegisterConsts.RegisterZeroIndex ? Register(dest, RegisterType.Gpr) : null;
+            Operand d = dest != RegisterConsts.RegisterZeroIndex ? Register(dest, RegisterType.Gpr) : null;
 
             List<Operand> sourcesList = new List<Operand>();
 
@@ -278,17 +278,17 @@ namespace Ryujinx.Graphics.Shader.Instructions
                 flags |= TextureFlags.Bindless;
             }
 
-            TextureOperation operation = context.CreateTextureOperation(
+            int binding = isBindless ? 0 : context.Config.ResourceManager.GetTextureOrImageBinding(
                 Instruction.ImageAtomic,
                 type,
                 format,
                 flags,
-                imm,
-                0,
-                new[] { destOperand },
-                sources);
+                TextureOperation.DefaultCbufSlot,
+                imm);
 
-            context.Add(operation);
+            Operand res = context.ImageAtomic(type, format, flags, binding, sources);
+
+            context.Copy(d, res);
         }
 
         private static void EmitSuld(
@@ -384,21 +384,17 @@ namespace Ryujinx.Graphics.Shader.Instructions
                     Array.Resize(ref dests, outputIndex);
                 }
 
-                TextureOperation operation = context.CreateTextureOperation(
+                TextureFormat format = isBindless ? TextureFormat.Unknown : context.Config.GetTextureFormat(handle);
+
+                int binding = isBindless ? 0 : context.Config.ResourceManager.GetTextureOrImageBinding(
                     Instruction.ImageLoad,
                     type,
+                    format,
                     flags,
-                    handle,
-                    (int)componentMask,
-                    dests,
-                    sources);
+                    TextureOperation.DefaultCbufSlot,
+                    handle);
 
-                if (!isBindless)
-                {
-                    operation.Format = context.Config.GetTextureFormat(handle);
-                }
-
-                context.Add(operation);
+                context.ImageLoad(type, format, flags, binding, (int)componentMask, dests, sources);
             }
             else
             {
@@ -431,17 +427,17 @@ namespace Ryujinx.Graphics.Shader.Instructions
                     Array.Resize(ref dests, outputIndex);
                 }
 
-                TextureOperation operation = context.CreateTextureOperation(
+                TextureFormat format = GetTextureFormat(size);
+
+                int binding = isBindless ? 0 : context.Config.ResourceManager.GetTextureOrImageBinding(
                     Instruction.ImageLoad,
                     type,
-                    GetTextureFormat(size),
+                    format,
                     flags,
-                    handle,
-                    compMask,
-                    dests,
-                    sources);
+                    TextureOperation.DefaultCbufSlot,
+                    handle);
 
-                context.Add(operation);
+                context.ImageLoad(type, format, flags, binding, compMask, dests, sources);
 
                 switch (size)
                 {
@@ -545,17 +541,15 @@ namespace Ryujinx.Graphics.Shader.Instructions
                 flags |= TextureFlags.Bindless;
             }
 
-            TextureOperation operation = context.CreateTextureOperation(
+            int binding = isBindless ? 0 : context.Config.ResourceManager.GetTextureOrImageBinding(
                 Instruction.ImageAtomic,
                 type,
                 format,
                 flags,
-                imm,
-                0,
-                null,
-                sources);
+                TextureOperation.DefaultCbufSlot,
+                imm);
 
-            context.Add(operation);
+            context.ImageAtomic(type, format, flags, binding, sources);
         }
 
         private static void EmitSust(
@@ -674,17 +668,15 @@ namespace Ryujinx.Graphics.Shader.Instructions
                 flags |= TextureFlags.Coherent;
             }
 
-            TextureOperation operation = context.CreateTextureOperation(
+            int binding = isBindless ? 0 : context.Config.ResourceManager.GetTextureOrImageBinding(
                 Instruction.ImageStore,
                 type,
                 format,
                 flags,
-                handle,
-                0,
-                null,
-                sources);
+                TextureOperation.DefaultCbufSlot,
+                handle);
 
-            context.Add(operation);
+            context.ImageStore(type, format, flags, binding, sources);
         }
 
         private static int GetComponentSizeInBytesLog2(SuatomSize size)

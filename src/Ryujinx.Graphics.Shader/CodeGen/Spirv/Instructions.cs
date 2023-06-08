@@ -647,7 +647,7 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Spirv
 
             SpvInstruction value = Src(componentType);
 
-            (var imageType, var imageVariable) = context.Images[new TextureMeta(texOp.CbufSlot, texOp.Handle, texOp.Format)];
+            (var imageType, var imageVariable) = context.Images[texOp.Handle];
 
             var image = context.Load(imageType, imageVariable);
 
@@ -734,7 +734,7 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Spirv
                 pCoords = Src(AggregateType.S32);
             }
 
-            (var imageType, var imageVariable) = context.Images[new TextureMeta(texOp.CbufSlot, texOp.Handle, texOp.Format)];
+            (var imageType, var imageVariable) = context.Images[texOp.Handle];
 
             var image = context.Load(imageType, imageVariable);
             var imageComponentType = context.GetType(componentType);
@@ -823,7 +823,7 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Spirv
 
             var texel = context.CompositeConstruct(context.TypeVector(context.GetType(componentType), ComponentsCount), cElems);
 
-            (var imageType, var imageVariable) = context.Images[new TextureMeta(texOp.CbufSlot, texOp.Handle, texOp.Format)];
+            (var imageType, var imageVariable) = context.Images[texOp.Handle];
 
             var image = context.Load(imageType, imageVariable);
 
@@ -906,7 +906,7 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Spirv
 
             var meta = new TextureMeta(texOp.CbufSlot, texOp.Handle, texOp.Format);
 
-            (_, var sampledImageType, var sampledImageVariable) = context.Samplers[meta];
+            (_, var sampledImageType, var sampledImageVariable) = context.Samplers[texOp.Handle];
 
             var image = context.Load(sampledImageType, sampledImageVariable);
 
@@ -1509,7 +1509,7 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Spirv
 
             var meta = new TextureMeta(texOp.CbufSlot, texOp.Handle, texOp.Format);
 
-            (var imageType, var sampledImageType, var sampledImageVariable) = context.Samplers[meta];
+            (var imageType, var sampledImageType, var sampledImageVariable) = context.Samplers[texOp.Handle];
 
             var image = context.Load(sampledImageType, sampledImageVariable);
 
@@ -1590,9 +1590,7 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Spirv
                 index = context.GetS32(texOp.GetSource(0));
             }
 
-            var meta = new TextureMeta(texOp.CbufSlot, texOp.Handle, texOp.Format);
-
-            (var imageType, var sampledImageType, var sampledImageVariable) = context.Samplers[meta];
+            (var imageType, var sampledImageType, var sampledImageVariable) = context.Samplers[texOp.Handle];
 
             var image = context.Load(sampledImageType, sampledImageVariable);
             image = context.Image(imageType, image);
@@ -1603,7 +1601,7 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Spirv
             }
             else
             {
-                var type = context.SamplersTypes[meta];
+                var type = context.SamplersTypes[texOp.Handle];
                 bool hasLod = !type.HasFlag(SamplerType.Multisample) && type != SamplerType.TextureBuffer;
 
                 int dimensions = (type & SamplerType.Mask) == SamplerType.TextureCube ? 2 : type.GetDimensions();

@@ -6,7 +6,12 @@ on:
     inputs: {}
   push:
     branches: [ master ]
+    
+    tags:
+      - "v*"
+      
     paths-ignore:
+    
       - '.github/*'
       - '.github/ISSUE_TEMPLATE/**'
       - '*.yml'
